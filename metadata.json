@@ -1,0 +1,5 @@
+{
+  "name": "Keyword Filter AI",
+  "description": "An AI-powered tool to extract non-solar-related keywords from a list of search terms. Paste your list, and the AI will filter out all terms related to solar energy, brands, and associated technologies.",
+  "requestFramePermissions": []
+}
