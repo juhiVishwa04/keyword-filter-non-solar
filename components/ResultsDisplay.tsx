@@ -19,19 +19,35 @@ const CheckIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ output, isLoading, error }) => {
-    const [copied, setCopied] = useState(false);
+    const [copied, setCopied] = useState<null | 'list' | 'all'>(null);
 
     useEffect(() => {
         if (copied) {
-            const timer = setTimeout(() => setCopied(false), 2000);
+            const timer = setTimeout(() => setCopied(null), 2000);
             return () => clearTimeout(timer);
         }
     }, [copied]);
 
-    const handleCopy = () => {
+    const handleCopyList = () => {
+        if (!output) return;
+        try {
+            const parsed = JSON.parse(output);
+            if (parsed && Array.isArray(parsed.non_solar_keywords)) {
+                const keywords = parsed.non_solar_keywords.join('\n');
+                navigator.clipboard.writeText(keywords);
+                setCopied('list');
+            }
+        } catch (e) {
+            console.error("Failed to parse and copy keyword list:", e);
+            // Fallback for safety if JSON is malformed
+            handleCopyAll();
+        }
+    };
+
+    const handleCopyAll = () => {
         if (output) {
             navigator.clipboard.writeText(output);
-            setCopied(true);
+            setCopied('all');
         }
     };
     
@@ -45,13 +61,25 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ output, isLoading, erro
         if (output) {
             return (
                 <div className="relative">
-                    <button
-                        onClick={handleCopy}
-                        className="absolute top-2 right-2 p-2 bg-gray-700/50 rounded-md hover:bg-gray-600/50 text-gray-400 hover:text-white transition-all"
-                        title="Copy to clipboard"
-                    >
-                        {copied ? <CheckIcon className="h-5 w-5 text-green-400" /> : <CopyIcon className="h-5 w-5" />}
-                    </button>
+                    <div className="absolute top-2 right-2 flex items-center space-x-2">
+                        <button
+                            onClick={handleCopyList}
+                            className="p-2 bg-gray-700/50 rounded-md hover:bg-gray-600/50 text-gray-400 hover:text-white transition-all"
+                            title="Copy keyword list (newline separated)"
+                            aria-label="Copy keyword list"
+                        >
+                            {copied === 'list' ? <CheckIcon className="h-5 w-5 text-green-400" /> : <CopyIcon className="h-5 w-5" />}
+                        </button>
+                        <button
+                            onClick={handleCopyAll}
+                            className="px-3 py-2 text-xs font-semibold bg-gray-700/50 rounded-md hover:bg-gray-600/50 text-gray-400 hover:text-white transition-all flex items-center"
+                            title="Copy the full JSON result"
+                            aria-label="Copy all content as JSON"
+                        >
+                            {copied === 'all' ? <CheckIcon className="h-4 w-4 mr-1 text-green-400" /> : null}
+                            Copy All
+                        </button>
+                    </div>
                     <pre className="bg-gray-900/70 p-4 rounded-lg overflow-x-auto text-sm text-cyan-300">
                         <code>{output}</code>
                     </pre>
